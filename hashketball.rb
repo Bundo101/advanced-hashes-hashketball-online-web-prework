@@ -118,6 +118,14 @@ def game_hash
   }
 end
 
+def get_players
+  home_team_players = game_hash.fetch(:home).fetch(:players)
+  away_team_players = game_hash.fetch(:away).fetch(:players)
+  players = home_team_players + away_team_players
+  binding.pry
+end
+get_players
+
 def num_points_scored(name)
   game_hash.each do |location, team_data| # level 1
     team_data.each do |attribute, data|   # Level 2 
@@ -155,11 +163,9 @@ def team_colors(team_name)
 end  
 
 def team_names
-  team_name_array = []
-  game_hash.each do |location, team_data|
-    team_name_array << team_data[:team_name]
+  game_hash.map do |location, team_data|
+    team_data[:team_name]
   end
-  return team_name_array
 end
 
 def player_numbers(team_name)
@@ -227,28 +233,24 @@ def winning_team
   away_team_total = 0
   game_hash.each do |location, team_data|
     if location == :home
-      team_data.each do |attribute, data|
-        if attribute == :players
-          data.each do |player_name, player_data|
-            home_team_total += player_data[:points]
-          end
-        end
-      end
+      home_team_total = get_points(team_data)
     else
-      team_data.each do |attribute, data|
-        if attribute == :players
-          data.each do |player_name, player_data|
-            away_team_total += player_data[:points]
-          end
-        end
+      away_team_total = get_points(team_data)
+    end
+  end
+  home_team_total > away_team_total ? game_hash[:home][:team_name] : game_hash[:away][:team_name]
+end
+
+def get_points(team_data)
+  total = 0
+  team_data.each do |attribute, data|
+    if attribute == :players
+      data.each do |player_name, player_data|
+        total += player_data[:points]
       end
     end
   end
-  if home_team_total > away_team_total
-    game_hash[:home][:team_name]
-  else
-    game_hash[:away][:team_name]
-  end
+  total
 end
 
 def player_with_longest_name
@@ -276,10 +278,7 @@ def long_name_steals_a_ton?
     team_data.each do |attribute, data|
       if attribute == :players
         data.each do |player_name, player_data|
-          if player_data[:steals] > maximum_stealz
-            maximum_stealz = player_data[:steals]
-            best_stealer = player_name
-          end
+          maximum_stealz, best_stealer = player_data[:steals], player_name if player_data[:steals] > maximum_stealz
         end
       end
     end
